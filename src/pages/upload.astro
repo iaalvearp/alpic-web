@@ -1,0 +1,197 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout title="Subir foto — AlPic">
+	<main class="page-container">
+		<section class="auth-page">
+			<div class="auth-card upload-card">
+				<h1 class="auth-card__title">Subir foto</h1>
+				<p class="auth-card__subtitle">Agrega una nueva imagen a tu galería</p>
+
+				<form id="upload-form" class="auth-form" novalidate>
+					<div class="upload-preview" id="upload-preview" hidden>
+						<img id="preview-img" alt="Vista previa" />
+					</div>
+
+					<div class="auth-field">
+						<label for="file">Imagen</label>
+						<input type="file" id="file" name="file" accept="image/*" required />
+						<p class="upload-hint">Máximo 10 MB. Formatos: JPG, PNG, WebP, GIF</p>
+					</div>
+
+					<div class="auth-field">
+						<label for="name">Nombre</label>
+						<input type="text" id="name" name="name" required maxlength="255" placeholder="Ej: Atardecer en la playa" />
+					</div>
+
+					<div class="auth-field">
+						<label for="alt">Texto alternativo</label>
+						<input type="text" id="alt" name="alt" required maxlength="255" placeholder="Descripción breve para accesibilidad" />
+					</div>
+
+					<div class="auth-field">
+						<label for="description">Descripción</label>
+						<textarea id="description" name="description" required maxlength="5000" rows="3" placeholder="Cuéntanos sobre esta foto..."></textarea>
+					</div>
+
+					<div class="auth-field">
+						<label for="source">Fuente</label>
+						<select id="source" name="source" required>
+							<option value="gallery">Galería</option>
+							<option value="camera">Cámara</option>
+						</select>
+					</div>
+
+					<details class="upload-gps">
+						<summary>Ubicación GPS (opcional)</summary>
+						<div class="upload-gps__fields">
+							<div class="auth-field">
+								<label for="latitude">Latitud</label>
+								<input type="number" id="latitude" name="latitude" step="any" min="-90" max="90" placeholder="-0.1806" />
+							</div>
+							<div class="auth-field">
+								<label for="longitude">Longitud</label>
+								<input type="number" id="longitude" name="longitude" step="any" min="-180" max="180" placeholder="-78.4678" />
+							</div>
+							<button type="button" class="auth-submit upload-gps__detect" id="detect-gps">
+								<span>Detectar ubicación</span>
+							</button>
+						</div>
+					</details>
+
+					<p id="upload-error" class="auth-error" role="alert" hidden></p>
+
+					<button type="submit" class="auth-submit upload-submit" id="upload-btn">
+						<span class="auth-submit__text">Subir foto</span>
+						<span class="auth-submit__spinner" hidden>Subiendo…</span>
+					</button>
+				</form>
+			</div>
+		</section>
+	</main>
+</Layout>
+
+<script>
+	import { api } from '../lib/api';
+
+	const form = document.querySelector<HTMLFormElement>('#upload-form');
+	const fileInput = document.querySelector<HTMLInputElement>('#file');
+	const previewContainer = document.querySelector<HTMLElement>('#upload-preview');
+	const previewImg = document.querySelector<HTMLImageElement>('#preview-img');
+	const errorEl = document.querySelector<HTMLParagraphElement>('#upload-error');
+	const btn = document.querySelector<HTMLButtonElement>('#upload-btn');
+	const btnText = btn?.querySelector<HTMLElement>('.auth-submit__text');
+	const btnSpinner = btn?.querySelector<HTMLElement>('.auth-submit__spinner');
+	const detectBtn = document.querySelector<HTMLButtonElement>('#detect-gps');
+
+	function showError(message: string): void {
+		if (!errorEl) return;
+		errorEl.textContent = message;
+		errorEl.hidden = false;
+	}
+
+	function hideError(): void {
+		if (errorEl) errorEl.hidden = true;
+	}
+
+	function setLoading(loading: boolean): void {
+		if (!btn || !btnText || !btnSpinner) return;
+		btn.disabled = loading;
+		btnText.hidden = loading;
+		btnSpinner.hidden = !loading;
+	}
+
+	fileInput?.addEventListener('change', () => {
+		const file = fileInput.files?.[0];
+		if (!file || !previewContainer || !previewImg) return;
+		previewImg.src = URL.createObjectURL(file);
+		previewContainer.hidden = false;
+	});
+
+	detectBtn?.addEventListener('click', () => {
+		if (!navigator.geolocation) {
+			showError('La geolocalización no está disponible en este navegador');
+			return;
+		}
+
+		detectBtn.disabled = true;
+		detectBtn.querySelector('span')!.textContent = 'Detectando…';
+
+		navigator.geolocation.getCurrentPosition(
+			(position) => {
+				const lat = document.querySelector<HTMLInputElement>('#latitude');
+				const lon = document.querySelector<HTMLInputElement>('#longitude');
+				if (lat) lat.value = String(position.coords.latitude);
+				if (lon) lon.value = String(position.coords.longitude);
+				detectBtn.querySelector('span')!.textContent = 'Ubicación detectada';
+			},
+			() => {
+				showError('No se pudo obtener la ubicación. Ingresa las coordenadas manualmente.');
+				detectBtn.disabled = false;
+				detectBtn.querySelector('span')!.textContent = 'Detectar ubicación';
+			},
+			{ enableHighAccuracy: true, timeout: 10000 },
+		);
+	});
+
+	form?.addEventListener('submit', async (e) => {
+		e.preventDefault();
+		hideError();
+
+		const formData = new FormData(form);
+		const file = formData.get('file') as File | null;
+		const name = String(formData.get('name') ?? '').trim();
+		const alt = String(formData.get('alt') ?? '').trim();
+		const description = String(formData.get('description') ?? '').trim();
+		const source = String(formData.get('source') ?? 'gallery');
+		const latitude = String(formData.get('latitude') ?? '').trim();
+		const longitude = String(formData.get('longitude') ?? '').trim();
+
+		if (!file || !file.size) {
+			showError('Selecciona una imagen');
+			return;
+		}
+		if (!name) {
+			showError('El nombre es requerido');
+			return;
+		}
+		if (!alt) {
+			showError('El texto alternativo es requerido');
+			return;
+		}
+		if (!description) {
+			showError('La descripción es requerida');
+			return;
+		}
+
+		setLoading(true);
+
+		try {
+			const payload = new FormData();
+			payload.append('file', file);
+			payload.append('name', name);
+			payload.append('alt', alt);
+			payload.append('description', description);
+			payload.append('source', source);
+			if (latitude) payload.append('latitude', latitude);
+			if (longitude) payload.append('longitude', longitude);
+
+			await api.upload('/api/images', payload);
+			window.location.href = '/';
+		} catch (err: unknown) {
+			const error = err as { code?: string; message?: string };
+			if (error.code === 'UPLOAD_TOO_LARGE') {
+				showError('La imagen supera los 10 MB. Intenta con una más pequeña.');
+			} else if (error.code === 'VALIDATION_ERROR') {
+				showError(error.message ?? 'Datos inválidos');
+			} else if (error.code === 'UNAUTHORIZED' || error.code === 'INVALID_TOKEN') {
+				window.location.href = '/login';
+				return;
+			} else {
+				showError(error.message ?? 'Error al subir la imagen');
+			}
+			setLoading(false);
+		}
+	});
+</script>
