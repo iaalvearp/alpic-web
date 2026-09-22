@@ -2,22 +2,71 @@
 import 'lightgallery/css/lightgallery.css';
 import 'lightgallery/css/lg-zoom.css';
 import '../styles/global.css';
+
+interface Props {
+	title?: string;
+	requireAuth?: boolean;
+}
+
+const { title = 'Fotos de AlPic', requireAuth = true } = Astro.props;
 ---
 
 <!doctype html>
-<html lang="es" data-theme="light" data-theme-preference="system">
+<html lang="es" data-theme="light" data-theme-preference="system" data-require-auth={requireAuth ? 'true' : 'false'}>
 	<head>
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width" />
-		<meta name="description" content="Catálogo público de imágenes de AlPic." />
+		<meta name="description" content="Galería de imágenes de AlPic." />
 		<meta name="color-scheme" content="light dark" />
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<link rel="icon" href="/favicon.ico" />
 		<meta name="generator" content={Astro.generator} />
-		<title>Fotos de AlPic</title>
+		<title>{title}</title>
 	</head>
 	<body>
+		<nav class="navbar" id="navbar">
+			<div class="navbar__inner page-container">
+				<a href="/" class="navbar__brand">Al<span>Pic</span></a>
+				<div class="navbar__links" id="navbar-links">
+					<a href="/" class="navbar__link">Galería</a>
+					<a href="/upload" class="navbar__link">Subir foto</a>
+					<a href="/admin" class="navbar__link navbar__link--admin" id="navbar-admin" hidden>Admin</a>
+				</div>
+				<div class="navbar__session" id="navbar-session" hidden>
+					<span class="navbar__user" id="navbar-user"></span>
+					<button type="button" class="navbar__logout" id="navbar-logout">Cerrar sesión</button>
+				</div>
+			</div>
+		</nav>
+
 		<slot />
+
 		<script src="../scripts/client.ts"></script>
+		<script>
+			import { loadSession, clearSession } from '../lib/auth';
+
+			const shouldRequireAuth = document.documentElement.dataset.requireAuth !== 'false';
+
+			const session = loadSession();
+			const navbarSession = document.querySelector<HTMLElement>('#navbar-session');
+			const navbarUser = document.querySelector<HTMLElement>('#navbar-user');
+			const navbarAdmin = document.querySelector<HTMLElement>('#navbar-admin');
+			const logoutBtn = document.querySelector<HTMLButtonElement>('#navbar-logout');
+
+			if (!session && shouldRequireAuth) {
+				window.location.href = '/login';
+			} else if (session) {
+				if (navbarSession) navbarSession.hidden = false;
+				if (navbarUser) navbarUser.textContent = session.user.email;
+				if (session.user.role === 'ADMIN' && navbarAdmin) {
+					navbarAdmin.hidden = false;
+				}
+			}
+
+			logoutBtn?.addEventListener('click', () => {
+				clearSession();
+				window.location.href = '/login';
+			});
+		</script>
 	</body>
 </html>
