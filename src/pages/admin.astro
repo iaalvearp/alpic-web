@@ -1,0 +1,238 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout title="Admin — AlPic">
+	<main class="page-container">
+		<section class="intro" aria-labelledby="page-title">
+			<div class="intro__topline">
+				<p class="intro__eyebrow">Panel de administración</p>
+			</div>
+			<h1 id="page-title">Admin</h1>
+			<p class="intro__subtitle">Todas las imágenes de todos los usuarios.</p>
+		</section>
+
+		<section class="gallery-section" aria-labelledby="gallery-heading">
+			<div class="gallery-heading">
+				<h2 id="gallery-heading">Todas las imágenes</h2>
+				<p id="gallery-status" role="status" aria-live="polite">Cargando…</p>
+			</div>
+			<div id="admin-gallery" class="gallery" data-state="loading" aria-busy="true">
+				<div class="skeleton skeleton--feature"></div>
+				<div class="skeleton skeleton--portrait"></div>
+				<div class="skeleton"></div>
+				<div class="skeleton skeleton--wide"></div>
+			</div>
+		</section>
+	</main>
+</Layout>
+
+<script>
+	import { api } from '../lib/api';
+	import { loadSession, clearSession } from '../lib/auth';
+	import { escapeHtml, formatFileSize, formatImageType } from '../utils/format';
+
+	interface AdminImage {
+		id: string;
+		ownerId: string;
+		name: string;
+		src: string | null;
+		alt: string;
+		description: string;
+		mimeType: string;
+		extension: string;
+		sizeBytes: number;
+		latitude: number | null;
+		longitude: number | null;
+		source: string;
+		createdAt: string;
+		isVisible: boolean;
+		deletedAt: string | null;
+	}
+
+	const gallery = document.querySelector<HTMLElement>('#admin-gallery');
+	const status = document.querySelector<HTMLElement>('#gallery-status');
+
+	function textEl(className: string, text: string): HTMLParagraphElement {
+		const el = document.createElement('p');
+		el.className = className;
+		el.textContent = text;
+		return el;
+	}
+
+	function renderState(type: 'error' | 'forbidden'): void {
+		if (!gallery) return;
+		const state = document.createElement('div');
+		state.className = `gallery-state gallery-state--error`;
+		if (type === 'forbidden') {
+			state.append(
+				textEl('gallery-state__title', 'Acceso denegado'),
+				textEl('gallery-state__message', 'No tienes permisos de administrador.'),
+			);
+		} else {
+			state.append(
+				textEl('gallery-state__title', 'Error al cargar'),
+				textEl('gallery-state__message', 'No se pudieron cargar las imágenes.'),
+			);
+			const retryBtn = document.createElement('button');
+			retryBtn.type = 'button';
+			retryBtn.className = 'auth-submit gallery-state__retry';
+			retryBtn.textContent = 'Reintentar';
+			retryBtn.addEventListener('click', () => void loadImages());
+			state.append(retryBtn);
+		}
+		gallery.replaceChildren(state);
+	}
+
+	function buildAdminCard(image: AdminImage): HTMLElement {
+		const card = document.createElement('article');
+		card.className = 'gallery-card gallery-card--entering admin-card';
+
+		if (image.deletedAt) {
+			card.classList.add('admin-card--deleted');
+		}
+
+		const link = document.createElement('a');
+		link.className = 'gallery-link';
+		link.href = image.src ?? '#';
+		link.setAttribute('aria-label', `Abrir ${image.name || 'imagen'} en pantalla completa`);
+		const captionName = escapeHtml(image.name || 'Imagen');
+		const captionDesc = image.description ? `<p>${escapeHtml(image.description)}</p>` : '';
+		link.dataset.subHtml = `<h4>${captionName}</h4>${captionDesc}`;
+
+		const picture = document.createElement('img');
+		picture.src = image.src ?? '';
+		picture.alt = image.alt ?? '';
+		picture.loading = 'lazy';
+		picture.decoding = 'async';
+
+		const overlay = document.createElement('div');
+		overlay.className = 'gallery-card__overlay';
+		overlay.setAttribute('aria-hidden', 'true');
+		const content = document.createElement('div');
+		content.className = 'gallery-card__content';
+		content.append(
+			textEl('gallery-card__name', image.name || 'Sin nombre'),
+			textEl('gallery-card__description', image.description || 'Sin descripción'),
+		);
+
+		const meta = document.createElement('p');
+		meta.className = 'gallery-card__metadata';
+		const size = document.createElement('span');
+		size.textContent = formatFileSize(image.sizeBytes);
+		const fmt = document.createElement('span');
+		fmt.textContent = formatImageType(image.extension, image.mimeType);
+		const date = document.createElement('span');
+		date.textContent = new Date(image.createdAt).toLocaleDateString('es');
+		meta.append(size, fmt, date);
+		content.append(meta);
+
+		if (image.latitude != null && image.longitude != null) {
+			const gps = document.createElement('p');
+			gps.className = 'gallery-card__metadata';
+			gps.innerHTML = `<span>${image.latitude.toFixed(4)}, ${image.longitude.toFixed(4)}</span>`;
+			content.append(gps);
+		}
+
+		overlay.append(content);
+		link.append(picture, overlay);
+
+		if (image.deletedAt) {
+			const badge = document.createElement('span');
+			badge.className = 'admin-badge admin-badge--deleted';
+			badge.textContent = 'ELIMINADA';
+			card.append(link, badge);
+		} else {
+			card.append(link);
+		}
+
+		return card;
+	}
+
+	async function loadImages(): Promise<void> {
+		if (!gallery || !status) return;
+
+		const session = loadSession();
+		if (!session) {
+			window.location.href = '/login';
+			return;
+		}
+
+		if (session.user.role !== 'ADMIN') {
+			gallery.dataset.state = 'error';
+			renderState('forbidden');
+			status.textContent = 'Sin permisos';
+			return;
+		}
+
+		gallery.dataset.state = 'loading';
+		gallery.setAttribute('aria-busy', 'true');
+		status.textContent = 'Cargando todas las imágenes…';
+
+		try {
+			const images = await api.get<AdminImage[]>('/api/admin/images');
+			gallery.dataset.count = String(images.length);
+
+			if (!images.length) {
+				gallery.dataset.state = 'empty';
+				const state = document.createElement('div');
+				state.className = 'gallery-state gallery-state--empty';
+				state.append(
+					textEl('gallery-state__title', 'No hay imágenes'),
+					textEl('gallery-state__message', 'Ningún usuario ha subido fotos aún.'),
+				);
+				gallery.replaceChildren(state);
+				status.textContent = 'Sin imágenes';
+				return;
+			}
+
+			const cards = images.map((img) => buildAdminCard(img));
+			gallery.dataset.state = 'ready';
+			gallery.replaceChildren(...cards);
+
+			requestAnimationFrame(() => {
+				requestAnimationFrame(() => {
+					cards.forEach((card) => {
+						const finishEntrance = (event: TransitionEvent): void => {
+							if (event.propertyName !== 'transform') return;
+							card.classList.remove('gallery-card--entering');
+							card.removeEventListener('transitionend', finishEntrance);
+						};
+						card.addEventListener('transitionend', finishEntrance);
+						card.classList.add('is-visible');
+						window.setTimeout(() => {
+							card.classList.remove('gallery-card--entering');
+							card.removeEventListener('transitionend', finishEntrance);
+						}, 1100);
+					});
+				});
+			});
+
+			const deletedCount = images.filter((i) => i.deletedAt).length;
+			const visibleText = `${images.length} ${images.length === 1 ? 'imagen' : 'imágenes'}`;
+			status.textContent = deletedCount
+				? `${visibleText} (${deletedCount} eliminada${deletedCount > 1 ? 's' : ''})`
+				: visibleText;
+		} catch (err: unknown) {
+			const error = err as { code?: string };
+			if (error.code === 'UNAUTHORIZED' || error.code === 'INVALID_TOKEN') {
+				clearSession();
+				window.location.href = '/login';
+				return;
+			}
+			if (error.code === 'FORBIDDEN') {
+				gallery.dataset.state = 'error';
+				renderState('forbidden');
+				status.textContent = 'Sin permisos';
+				return;
+			}
+			gallery.dataset.state = 'error';
+			renderState('error');
+			status.textContent = 'Error al cargar';
+		} finally {
+			gallery.setAttribute('aria-busy', 'false');
+		}
+	}
+
+	void loadImages();
+</script>
