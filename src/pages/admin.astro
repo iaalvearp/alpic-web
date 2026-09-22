@@ -38,6 +38,7 @@ import Layout from '../layouts/Layout.astro';
 		ownerId: string;
 		name: string;
 		src: string | null;
+		storagePath: string | null;
 		alt: string;
 		description: string;
 		mimeType: string;
@@ -45,8 +46,11 @@ import Layout from '../layouts/Layout.astro';
 		sizeBytes: number;
 		latitude: number | null;
 		longitude: number | null;
+		mapsUrl: string | null;
 		source: string;
+		originalFilename: string;
 		createdAt: string;
+		updatedAt: string;
 		isVisible: boolean;
 		deletedAt: string | null;
 	}
@@ -146,17 +150,24 @@ import Layout from '../layouts/Layout.astro';
 		exportButton.addEventListener('click', () => {
 			exportImageAsJson({
 				id: image.id,
+				ownerId: image.ownerId,
 				name: image.name,
 				alt: image.alt,
 				description: image.description,
 				src: image.src ?? '',
+				storagePath: image.storagePath,
 				extension: image.extension,
 				mimeType: image.mimeType,
 				sizeBytes: image.sizeBytes,
 				latitude: image.latitude,
 				longitude: image.longitude,
+				mapsUrl: image.mapsUrl,
 				source: image.source,
+				originalFilename: image.originalFilename,
 				createdAt: image.createdAt,
+				updatedAt: image.updatedAt,
+				isVisible: image.isVisible,
+				deletedAt: image.deletedAt,
 			});
 		});
 
