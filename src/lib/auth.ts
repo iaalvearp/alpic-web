@@ -1,4 +1,5 @@
 const SESSION_KEY = 'alpic-session';
+const SESSION_EXPIRED_KEY = 'alpic-session-expired';
 
 export interface AuthUser {
 	id: string;
@@ -110,6 +111,27 @@ export function clearSession(): void {
 		localStorage.removeItem(SESSION_KEY);
 	} catch {
 		// Storage blocked
+	}
+}
+
+export function markSessionExpired(): void {
+	try {
+		localStorage.setItem(SESSION_EXPIRED_KEY, '1');
+	} catch {
+		// Storage blocked
+	}
+}
+
+export function consumeSessionExpired(): boolean {
+	try {
+		const value = localStorage.getItem(SESSION_EXPIRED_KEY);
+		if (value === '1') {
+			localStorage.removeItem(SESSION_EXPIRED_KEY);
+			return true;
+		}
+		return false;
+	} catch {
+		return false;
 	}
 }
 

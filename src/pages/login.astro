@@ -20,6 +20,7 @@ import Layout from '../layouts/Layout.astro';
 					</div>
 
 					<p id="login-error" class="auth-error" role="alert" hidden></p>
+					<p id="login-expired" class="auth-info" role="status">Tu sesión expiró. Inicia sesión nuevamente.</p>
 
 					<button type="submit" class="auth-submit" id="login-btn">
 						<span class="auth-submit__text">Iniciar sesión</span>
@@ -36,13 +37,18 @@ import Layout from '../layouts/Layout.astro';
 </Layout>
 
 <script>
-	import { login } from '../lib/auth';
+	import { login, consumeSessionExpired } from '../lib/auth';
 
 	const form = document.querySelector<HTMLFormElement>('#login-form');
 	const errorEl = document.querySelector<HTMLParagraphElement>('#login-error');
+	const expiredEl = document.querySelector<HTMLParagraphElement>('#login-expired');
 	const btn = document.querySelector<HTMLButtonElement>('#login-btn');
 	const btnText = btn?.querySelector<HTMLElement>('.auth-submit__text');
 	const btnSpinner = btn?.querySelector<HTMLElement>('.auth-submit__spinner');
+
+	if (expiredEl) {
+		expiredEl.hidden = !consumeSessionExpired();
+	}
 
 	function showError(message: string): void {
 		if (!errorEl) return;

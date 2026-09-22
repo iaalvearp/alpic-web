@@ -29,7 +29,7 @@ import Layout from '../layouts/Layout.astro';
 
 <script>
 	import { api } from '../lib/api';
-	import { loadSession, clearSession } from '../lib/auth';
+	import { loadSession, clearSession, markSessionExpired } from '../lib/auth';
 	import { escapeHtml, formatFileSize, formatImageType } from '../utils/format';
 	import { exportImageAsJson } from '../utils/export';
 
@@ -239,6 +239,7 @@ import Layout from '../layouts/Layout.astro';
 		} catch (err: unknown) {
 			const error = err as { code?: string };
 			if (error.code === 'UNAUTHORIZED' || error.code === 'INVALID_TOKEN') {
+				markSessionExpired();
 				clearSession();
 				window.location.href = '/login';
 				return;

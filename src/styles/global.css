@@ -57,6 +57,7 @@ a { color: inherit; }
 .auth-field input { padding: .65rem .85rem; border: 1px solid var(--line); border-radius: .5rem; background: var(--background); color: var(--text); font-size: .9rem; transition: border-color .2s, box-shadow .2s; }
 .auth-field input:focus { border-color: var(--gold); box-shadow: 0 0 0 3px color-mix(in srgb, var(--gold) 20%, transparent); outline: none; }
 .auth-error { margin: 0; padding: .6rem .85rem; border-radius: .45rem; background: color-mix(in srgb, #dc2626 12%, var(--surface)); color: #dc2626; font-size: .82rem; }
+.auth-info { margin: 0; padding: .6rem .85rem; border-radius: .45rem; background: color-mix(in srgb, var(--gold) 15%, var(--surface)); color: var(--text); font-size: .82rem; }
 .auth-submit { display: flex; align-items: center; justify-content: center; gap: .5rem; padding: .7rem 1.5rem; border: none; border-radius: .5rem; background: var(--gold); color: var(--navy); font-size: .9rem; font-weight: 600; cursor: pointer; transition: background-color .2s, transform .15s; }
 .auth-submit:hover:not(:disabled) { background: var(--gold-bright); transform: translateY(-1px); }
 .auth-submit:disabled { opacity: .6; cursor: not-allowed; }

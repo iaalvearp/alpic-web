@@ -2,6 +2,14 @@ import { initTheme } from './theme';
 
 let hasStarted = false;
 
+window.addEventListener('error', (event) => {
+	if (import.meta.env.DEV) console.error('[AlPic] Uncaught error', event.error);
+});
+
+window.addEventListener('unhandledrejection', (event) => {
+	if (import.meta.env.DEV) console.error('[AlPic] Unhandled rejection', event.reason);
+});
+
 async function start(): Promise<void> {
 	if (hasStarted) return;
 	hasStarted = true;

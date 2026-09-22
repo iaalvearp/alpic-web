@@ -1,5 +1,5 @@
 import { getVisibleImages, type ImageRecord } from '../services/images';
-import { clearSession } from '../lib/auth';
+import { clearSession, markSessionExpired } from '../lib/auth';
 import { escapeHtml, formatFileSize, formatImageType } from '../utils/format';
 import { exportImageAsJson } from '../utils/export';
 
@@ -205,6 +205,7 @@ export async function initGallery(): Promise<void> {
 	} catch (error: unknown) {
 		const apiError = error as { code?: string };
 		if (apiError.code === 'UNAUTHORIZED' || apiError.code === 'INVALID_TOKEN') {
+			markSessionExpired();
 			clearSession();
 			window.location.href = '/login';
 			return;
