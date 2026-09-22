@@ -134,6 +134,7 @@ h1 span { color: var(--gold); }
 .gallery-state { grid-column: 1 / -1; grid-row: span 2; min-height: 14rem; display: grid; place-content: center; padding: 2rem; text-align: center; border: 1px solid var(--line); border-radius: var(--card-radius); background: var(--surface); }
 .gallery-state__title { margin-bottom: .5rem; font-family: Georgia, "Times New Roman", serif; font-size: clamp(1.6rem, 3vw, 2.25rem); }
 .gallery-state__message { max-width: 32rem; margin-bottom: 0; color: var(--muted); line-height: 1.6; }
+.gallery-state__retry { margin-top: 1.25rem; }
 footer { padding-block: 1.5rem; color: var(--muted); background: var(--surface); border-top: 1px solid var(--line); font-size: .78rem; }
 footer p { margin: 0; }
 .lg-backdrop { background: rgba(2, 8, 16, .97); }

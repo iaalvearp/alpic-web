@@ -1,4 +1,5 @@
 import { getVisibleImages, type ImageRecord } from '../services/images';
+import { clearSession } from '../lib/auth';
 import { escapeHtml, formatFileSize, formatImageType } from '../utils/format';
 
 const bentoPattern = ['feature', 'portrait', 'square', 'wide', 'square', 'portrait'] as const;
@@ -88,15 +89,25 @@ function renderState(gallery: HTMLElement, type: 'empty' | 'error'): void {
 	state.append(
 		textElement(
 			'gallery-state__title',
-			type === 'empty' ? 'Aún no hay imágenes públicas' : 'No pudimos cargar la galería',
+			type === 'empty' ? 'Aún no tienes imágenes' : 'No pudimos cargar tu galería',
 		),
 		textElement(
 			'gallery-state__message',
 			type === 'empty'
-				? 'Cuando haya imágenes visibles en AlPic, aparecerán aquí automáticamente.'
-				: 'Revisa tu conexión e inténtalo de nuevo recargando la página.',
+				? 'Sube tu primera foto desde la app móvil o desde aquí.'
+				: 'Revisa tu conexión e inténtalo de nuevo.',
 		),
 	);
+
+	if (type === 'error') {
+		const retryBtn = document.createElement('button');
+		retryBtn.type = 'button';
+		retryBtn.className = 'auth-submit gallery-state__retry';
+		retryBtn.textContent = 'Reintentar';
+		retryBtn.addEventListener('click', () => void initGallery());
+		state.append(retryBtn);
+	}
+
 	gallery.replaceChildren(state);
 }
 
@@ -126,32 +137,24 @@ export async function initGallery(): Promise<void> {
 	const status = document.querySelector<HTMLElement>('#gallery-status');
 	if (!gallery) return;
 
+	gallery.dataset.state = 'loading';
+	gallery.setAttribute('aria-busy', 'true');
+	if (status) status.textContent = 'Cargando tus imágenes…';
+
 	try {
 		const images = await getVisibleImages();
 		gallery.dataset.count = String(images.length);
 		if (!images.length) {
 			gallery.dataset.state = 'empty';
 			renderState(gallery, 'empty');
-			if (status) status.textContent = 'Sin imágenes visibles';
+			if (status) status.textContent = 'Sin imágenes';
 			return;
 		}
 
 		const cards = images.map((image, index) => buildCard(image, index, images.length));
 		gallery.dataset.state = 'ready';
 		gallery.replaceChildren(...cards);
-		const firstCard = cards[0];
 		requestAnimationFrame(() => {
-			if (import.meta.env.DEV && firstCard) {
-				const before = getComputedStyle(firstCard);
-				console.debug('[AlPic gallery] cards rendered', {
-					count: cards.length,
-					beforeVisibility: {
-						opacity: before.opacity,
-						transform: before.transform,
-					},
-				});
-			}
-
 			requestAnimationFrame(() => {
 				cards.forEach((card) => {
 					const finishEntrance = (event: TransitionEvent): void => {
@@ -168,19 +171,6 @@ export async function initGallery(): Promise<void> {
 						card.removeEventListener('transitionend', finishEntrance);
 					}, 1100);
 				});
-
-				if (import.meta.env.DEV && firstCard) {
-					requestAnimationFrame(() => {
-						const after = getComputedStyle(firstCard);
-						console.debug('[AlPic gallery] entrance activated', {
-							isVisibleAdded: firstCard.classList.contains('is-visible'),
-							afterVisibility: {
-								opacity: after.opacity,
-								transform: after.transform,
-							},
-						});
-					});
-				}
 			});
 		});
 		if (status) status.textContent = `${images.length} ${images.length === 1 ? 'imagen' : 'imágenes'}`;
@@ -189,7 +179,13 @@ export async function initGallery(): Promise<void> {
 		} catch (error) {
 			if (import.meta.env.DEV) console.error('[AlPic] LightGallery initialization failed', error);
 		}
-	} catch (error) {
+	} catch (error: unknown) {
+		const apiError = error as { code?: string };
+		if (apiError.code === 'UNAUTHORIZED' || apiError.code === 'INVALID_TOKEN') {
+			clearSession();
+			window.location.href = '/login';
+			return;
+		}
 		gallery.dataset.state = 'error';
 		gallery.dataset.count = '0';
 		renderState(gallery, 'error');

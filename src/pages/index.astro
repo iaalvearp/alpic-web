@@ -6,7 +6,7 @@ import Layout from '../layouts/Layout.astro';
 	<main class="page-container">
 		<section class="intro" aria-labelledby="page-title">
 			<div class="intro__topline">
-				<p class="intro__eyebrow">Galería pública · AlPic</p>
+				<p class="intro__eyebrow">Mi galería · AlPic</p>
 				<div id="theme-menu" class="theme-menu">
 					<div id="theme-options" class="theme-options" aria-label="Opciones de tema">
 						<button class="theme-option" type="button" data-theme-option="system" aria-label="Tema del sistema" title="Tema del sistema" aria-pressed="true" tabindex="-1">
@@ -27,12 +27,12 @@ import Layout from '../layouts/Layout.astro';
 				</div>
 			</div>
 			<h1 id="page-title">Fotos de Al<span>Pic</span></h1>
-			<p class="intro__subtitle">Un catálogo visual que centraliza imágenes y entrega solo los datos necesarios para reutilizarlas en otros proyectos.</p>
+			<p class="intro__subtitle">Tus imágenes centralizadas con todos los metadatos que necesitas.</p>
 		</section>
 
 		<section class="gallery-section" aria-labelledby="gallery-heading">
 			<div class="gallery-heading">
-				<h2 id="gallery-heading">Colección</h2>
+				<h2 id="gallery-heading">Mis fotos</h2>
 				<p id="gallery-status" role="status" aria-live="polite">Cargando imágenes…</p>
 			</div>
 			<div id="gallery" class="gallery" data-state="loading" aria-busy="true">
@@ -43,5 +43,5 @@ import Layout from '../layouts/Layout.astro';
 			</div>
 		</section>
 	</main>
-	<footer><div class="page-container"><p>Contenido público sincronizado desde AlPic.</p></div></footer>
+	<footer><div class="page-container"><p>AlPic — Tu galería personal de fotos.</p></div></footer>
 </Layout>
