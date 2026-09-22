@@ -31,6 +31,7 @@ import Layout from '../layouts/Layout.astro';
 	import { api } from '../lib/api';
 	import { loadSession, clearSession } from '../lib/auth';
 	import { escapeHtml, formatFileSize, formatImageType } from '../utils/format';
+	import { exportImageAsJson } from '../utils/export';
 
 	interface AdminImage {
 		id: string;
@@ -137,13 +138,35 @@ import Layout from '../layouts/Layout.astro';
 		overlay.append(content);
 		link.append(picture, overlay);
 
+		const exportButton = document.createElement('button');
+		exportButton.className = 'gallery-card__export-button';
+		exportButton.type = 'button';
+		exportButton.setAttribute('aria-label', `Exportar JSON de ${image.name || 'la imagen'}`);
+		exportButton.innerHTML = '<span aria-hidden="true">{}</span>';
+		exportButton.addEventListener('click', () => {
+			exportImageAsJson({
+				id: image.id,
+				name: image.name,
+				alt: image.alt,
+				description: image.description,
+				src: image.src ?? '',
+				extension: image.extension,
+				mimeType: image.mimeType,
+				sizeBytes: image.sizeBytes,
+				latitude: image.latitude,
+				longitude: image.longitude,
+				source: image.source,
+				createdAt: image.createdAt,
+			});
+		});
+
 		if (image.deletedAt) {
 			const badge = document.createElement('span');
 			badge.className = 'admin-badge admin-badge--deleted';
 			badge.textContent = 'ELIMINADA';
-			card.append(link, badge);
+			card.append(link, badge, exportButton);
 		} else {
-			card.append(link);
+			card.append(link, exportButton);
 		}
 
 		return card;

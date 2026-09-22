@@ -1,6 +1,7 @@
 import { getVisibleImages, type ImageRecord } from '../services/images';
 import { clearSession } from '../lib/auth';
 import { escapeHtml, formatFileSize, formatImageType } from '../utils/format';
+import { exportImageAsJson } from '../utils/export';
 
 const bentoPattern = ['feature', 'portrait', 'square', 'wide', 'square', 'portrait'] as const;
 
@@ -79,7 +80,29 @@ function buildCard(image: ImageRecord, index: number, count: number): HTMLElemen
 	picture.addEventListener('error', setDimensions, { once: true });
 	if (picture.complete) setDimensions();
 
-	card.append(link, infoButton);
+	const exportButton = document.createElement('button');
+	exportButton.className = 'gallery-card__export-button';
+	exportButton.type = 'button';
+	exportButton.setAttribute('aria-label', `Exportar JSON de ${image.name || 'la imagen'}`);
+	exportButton.innerHTML = '<span aria-hidden="true">{}</span>';
+	exportButton.addEventListener('click', () => {
+		exportImageAsJson({
+			id: image.id,
+			name: image.name ?? '',
+			alt: image.alt ?? '',
+			description: image.description ?? '',
+			src: image.src,
+			extension: image.extension,
+			mimeType: image.mime_type,
+			sizeBytes: image.size_bytes,
+			latitude: null,
+			longitude: null,
+			source: 'gallery',
+			createdAt: image.created_at,
+		});
+	});
+
+	card.append(link, infoButton, exportButton);
 	return card;
 }
 
