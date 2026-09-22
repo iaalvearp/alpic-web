@@ -73,8 +73,9 @@ a { color: inherit; }
 .upload-hint { margin: .25rem 0 0; color: var(--muted); font-size: .72rem; }
 .upload-gps { border: 1px solid var(--line); border-radius: .5rem; padding: .75rem 1rem; }
 .upload-gps summary { cursor: pointer; font-size: .85rem; font-weight: 600; color: var(--text); }
-.upload-gps__fields { display: grid; grid-template-columns: 1fr 1fr auto; gap: .75rem; margin-top: .75rem; align-items: end; }
-.upload-gps__detect { padding: .55rem .85rem; font-size: .78rem; white-space: nowrap; }
+.upload-gps__fields { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; margin-top: .75rem; align-items: end; }
+.upload-gps__fields input { width: 100%; box-sizing: border-box; }
+.upload-gps__detect { grid-column: 1 / -1; justify-self: end; padding: .55rem .85rem; font-size: .78rem; white-space: nowrap; }
 .upload-submit { width: 100%; }
 
 textarea { resize: vertical; min-height: 4rem; font-family: inherit; }
@@ -168,7 +169,6 @@ footer p { margin: 0; }
 	.navbar__links { gap: 0; }
 	.navbar__link { padding: .4rem .5rem; font-size: .75rem; }
 	.navbar__user { max-width: 6rem; }
-	.upload-gps__fields { grid-template-columns: 1fr; }
 	.gallery { grid-template-columns: 1fr; grid-auto-rows: auto; }
 	.gallery-card, .gallery[data-count] .gallery-card, .gallery-card--feature, .gallery-card--portrait, .gallery-card--square, .gallery-card--wide { grid-column: 1 !important; grid-row: auto !important; min-height: clamp(19rem, 108vw, 34rem); }
 	.skeleton, .skeleton--feature, .skeleton--portrait, .skeleton--wide { grid-column: 1; grid-row: auto; height: 23rem; }
