@@ -16,8 +16,12 @@ import Layout from '../layouts/Layout.astro';
 
 					<div class="auth-field">
 						<label for="file">Imagen</label>
-						<input type="file" id="file" name="file" accept="image/*" required />
-						<p class="upload-hint">Máximo 10 MB. Formatos: JPG, PNG, WebP, GIF</p>
+						<input type="file" id="file" name="file" accept="image/*" required class="sr-only" aria-describedby="upload-hint" />
+						<button type="button" class="upload-pick" id="upload-pick" aria-describedby="upload-hint">
+							<span class="upload-pick__placeholder">Elegir imagen</span>
+							<span class="upload-pick__name" id="upload-pick-name" hidden></span>
+						</button>
+						<p class="upload-hint" id="upload-hint">Puedes elegir el archivo con el botón o arrastrar y soltar una imagen aquí. Máximo 10 MB. Formatos: JPG, PNG, WebP, GIF</p>
 					</div>
 
 					<div class="auth-field">
@@ -84,6 +88,8 @@ import Layout from '../layouts/Layout.astro';
 	const btnText = btn?.querySelector<HTMLElement>('.auth-submit__text');
 	const btnSpinner = btn?.querySelector<HTMLElement>('.auth-submit__spinner');
 	const detectBtn = document.querySelector<HTMLButtonElement>('#detect-gps');
+	const pickBtn = document.querySelector<HTMLButtonElement>('#upload-pick');
+	const pickName = document.querySelector<HTMLElement>('#upload-pick-name');
 
 	function showError(message: string): void {
 		if (!errorEl) return;
@@ -102,12 +108,47 @@ import Layout from '../layouts/Layout.astro';
 		btnSpinner.hidden = !loading;
 	}
 
+	function showFile(file: File | null): void {
+		if (!previewContainer || !previewImg || !pickName) return;
+		if (file) {
+			pickName.textContent = file.name;
+			pickName.hidden = false;
+			previewImg.src = URL.createObjectURL(file);
+			previewContainer.hidden = false;
+		} else {
+			pickName.hidden = true;
+			previewContainer.hidden = true;
+		}
+	}
+
+	pickBtn?.addEventListener('click', () => fileInput?.click());
+
 	fileInput?.addEventListener('change', () => {
-		const file = fileInput.files?.[0];
-		if (!file || !previewContainer || !previewImg) return;
-		previewImg.src = URL.createObjectURL(file);
-		previewContainer.hidden = false;
+		const file = fileInput.files?.[0] ?? null;
+		if (file) showFile(file);
 	});
+
+	if (pickBtn) {
+		pickBtn.addEventListener('dragover', (e) => {
+			e.preventDefault();
+			pickBtn.classList.add('upload-pick--dragover');
+		});
+
+		pickBtn.addEventListener('dragleave', () => {
+			pickBtn.classList.remove('upload-pick--dragover');
+		});
+
+		pickBtn.addEventListener('drop', (e) => {
+			e.preventDefault();
+			pickBtn.classList.remove('upload-pick--dragover');
+			const dropped = e.dataTransfer?.files?.[0];
+			if (!dropped || !fileInput) return;
+			const transfer = new DataTransfer();
+			transfer.items.add(dropped);
+			fileInput.files = transfer.files;
+			showFile(dropped);
+		});
+	}
 
 	detectBtn?.addEventListener('click', () => {
 		if (!navigator.geolocation) {
