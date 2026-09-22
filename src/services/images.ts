@@ -1,27 +1,54 @@
-import { getSupabaseClient } from '../lib/supabase';
+import { api } from '../lib/api';
 
 export type ImageRecord = {
+	id: string;
 	src: string;
 	name: string | null;
 	alt: string | null;
 	description: string | null;
-	size_bytes: number | null;
-	extension: string | null;
-	mime_type: string | null;
+	size_bytes: number;
+	extension: string;
+	mime_type: string;
 	created_at: string;
 };
 
-const IMAGE_FIELDS =
-	'src,name,alt,description,size_bytes,extension,mime_type,created_at' as const;
+interface BackendImage {
+	id: string;
+	ownerId: string;
+	name: string;
+	src: string | null;
+	storagePath: string | null;
+	alt: string;
+	description: string;
+	mimeType: string;
+	extension: string;
+	sizeBytes: number;
+	latitude: number | null;
+	longitude: number | null;
+	mapsUrl: string | null;
+	source: string;
+	originalFilename: string;
+	createdAt: string;
+	updatedAt: string;
+	isVisible: boolean;
+	deletedAt: string | null;
+}
+
+function toImageRecord(img: BackendImage): ImageRecord {
+	return {
+		id: img.id,
+		src: img.src ?? '',
+		name: img.name,
+		alt: img.alt,
+		description: img.description,
+		size_bytes: img.sizeBytes,
+		extension: img.extension,
+		mime_type: img.mimeType,
+		created_at: img.createdAt,
+	};
+}
 
 export async function getVisibleImages(): Promise<ImageRecord[]> {
-	const { data, error } = await getSupabaseClient()
-		.schema('public')
-		.from('images')
-		.select(IMAGE_FIELDS)
-		.eq('is_visible', true)
-		.order('created_at', { ascending: false });
-
-	if (error) throw new Error(error.message);
-	return data ?? [];
+	const images = await api.get<BackendImage[]>('/api/images');
+	return images.map(toImageRecord);
 }
