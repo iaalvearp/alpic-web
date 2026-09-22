@@ -49,6 +49,6 @@ function toImageRecord(img: BackendImage): ImageRecord {
 }
 
 export async function getVisibleImages(): Promise<ImageRecord[]> {
-	const images = await api.get<BackendImage[]>('/api/images');
+	const images = await api.get<BackendImage[]>('/api/v1/images');
 	return images.map(toImageRecord);
 }

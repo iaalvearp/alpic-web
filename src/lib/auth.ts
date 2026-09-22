@@ -21,7 +21,7 @@ export interface LoginResponse {
 }
 
 export async function login(email: string, password: string): Promise<AuthSession> {
-	const response = await fetch(`${import.meta.env.PUBLIC_API_BASE_URL}/api/auth/login`, {
+	const response = await fetch(`${import.meta.env.PUBLIC_API_BASE_URL}/api/v1/auth/login`, {
 		method: 'POST',
 		headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify({ email, password }),
@@ -47,7 +47,7 @@ export async function login(email: string, password: string): Promise<AuthSessio
 }
 
 export async function register(email: string, password: string): Promise<AuthSession> {
-	const response = await fetch(`${import.meta.env.PUBLIC_API_BASE_URL}/api/auth/register`, {
+	const response = await fetch(`${import.meta.env.PUBLIC_API_BASE_URL}/api/v1/auth/register`, {
 		method: 'POST',
 		headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify({ email, password }),
@@ -73,7 +73,7 @@ export async function register(email: string, password: string): Promise<AuthSes
 }
 
 export async function getMe(token: string): Promise<AuthUser> {
-	const response = await fetch(`${import.meta.env.PUBLIC_API_BASE_URL}/api/auth/me`, {
+	const response = await fetch(`${import.meta.env.PUBLIC_API_BASE_URL}/api/v1/auth/me`, {
 		method: 'GET',
 		headers: { 'Authorization': `Bearer ${token}` },
 	});

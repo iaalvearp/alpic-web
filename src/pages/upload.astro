@@ -177,7 +177,7 @@ import Layout from '../layouts/Layout.astro';
 			if (latitude) payload.append('latitude', latitude);
 			if (longitude) payload.append('longitude', longitude);
 
-			await api.upload('/api/images', payload);
+			await api.upload('/api/v1/images', payload);
 			window.location.href = '/';
 		} catch (err: unknown) {
 			const error = err as { code?: string; message?: string };

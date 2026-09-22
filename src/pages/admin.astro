@@ -193,7 +193,7 @@ import Layout from '../layouts/Layout.astro';
 		status.textContent = 'Cargando todas las imágenes…';
 
 		try {
-			const images = await api.get<AdminImage[]>('/api/admin/images');
+			const images = await api.get<AdminImage[]>('/api/v1/images');
 			gallery.dataset.count = String(images.length);
 
 			if (!images.length) {
